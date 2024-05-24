@@ -21,6 +21,9 @@
 <body>
   <h1>PWA Push Notifications</h1>
   <button id="subscribeButton">Subscribe to Notifications</button>
+  
+  <!-- Audio player for testing -->
+  <audio id="testAudio" src="notification-sound.mp3" controls></audio>
 
   <script>
       if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -32,9 +35,9 @@
           });
 
           navigator.serviceWorker.addEventListener('message', function(event) {
+              console.log('Message received from service worker:', event.data);
               if (event.data.action === 'playSound') {
-                  const audio = new Audio(event.data.soundUrl);
-                  audio.play();
+                  playSound(event.data.soundUrl);
               }
           });
       } else {
@@ -74,7 +77,7 @@
               // Typically, you would send pushSubscription to your server here
               return pushSubscription;
           }).catch(function(error) {
-              console.error('Failed to subscribe the user: ', error);
+              console.error('Failed to subscribe the user:', error);
           });
       }
 
@@ -103,6 +106,13 @@
                   });
               });
           }, 10000); // 60000ms = 1 minute
+      }
+
+      function playSound(soundUrl) {
+          const audio = new Audio(soundUrl);
+          audio.play().catch(error => {
+              console.error('Error playing sound:', error);
+          });
       }
   </script>
 </body>
