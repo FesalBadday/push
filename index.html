@@ -21,99 +21,99 @@
 <body>
   <h1>PWA Push Notifications</h1>
   <button id="subscribeButton">Subscribe to Notifications</button>
-  
+
   <!-- Audio player for testing -->
   <audio id="testAudio" src="notification-sound.mp3" controls></audio>
 
   <script>
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-          navigator.serviceWorker.register('service-worker.js')
-          .then(function(registration) {
-              console.log('Service Worker registered with scope:', registration.scope);
-          }).catch(function(error) {
-              console.log('Service Worker registration failed:', error);
-          });
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(function (registration) {
+          console.log('Service Worker registered with scope:', registration.scope);
+        }).catch(function (error) {
+          console.error('Service Worker registration failed:', error);
+        });
 
-          navigator.serviceWorker.addEventListener('message', function(event) {
-              console.log('Message received from service worker:', event.data);
-              if (event.data.action === 'playSound') {
-                  playSound(event.data.soundUrl);
-              }
-          });
-      } else {
-          console.warn('Push messaging is not supported');
-      }
-
-      document.getElementById('subscribeButton').addEventListener('click', function() {
-          askPermission().then(subscribeUserToPush).then(startNotificationInterval);
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        console.log('Message received from service worker:', event.data);
+        if (event.data.action === 'playSound') {
+          playSound(event.data.soundUrl);
+        }
       });
+    } else {
+      console.warn('Push messaging is not supported');
+    }
 
-      function askPermission() {
-          return new Promise(function(resolve, reject) {
-              const permissionResult = Notification.requestPermission(function(result) {
-                  resolve(result);
-              });
+    document.getElementById('subscribeButton').addEventListener('click', function () {
+      askPermission().then(subscribeUserToPush).then(startNotificationInterval);
+    });
 
-              if (permissionResult) {
-                  permissionResult.then(resolve, reject);
-              }
-          }).then(function(permissionResult) {
-              if (permissionResult !== 'granted') {
-                  throw new Error('We weren\'t granted permission.');
-              }
+    function askPermission() {
+      return new Promise(function (resolve, reject) {
+        const permissionResult = Notification.requestPermission(function (result) {
+          resolve(result);
+        });
+
+        if (permissionResult) {
+          permissionResult.then(resolve, reject);
+        }
+      }).then(function (permissionResult) {
+        if (permissionResult !== 'granted') {
+          throw new Error('We weren\'t granted permission.');
+        }
+      });
+    }
+
+    function subscribeUserToPush() {
+      return navigator.serviceWorker.ready.then(function (registration) {
+        const subscribeOptions = {
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array('BPskWS22ek0iV9nES6i24yV36owupZIosh0W0SJexNy1JELI8HM46xyGuK858XAfMyiwidATXuxQXUADhOWEsWw')
+        };
+
+        return registration.pushManager.subscribe(subscribeOptions);
+      }).then(function (pushSubscription) {
+        console.log('Received PushSubscription:', JSON.stringify(pushSubscription));
+        // Typically, you would send pushSubscription to your server here
+        return pushSubscription;
+      }).catch(function (error) {
+        console.error('Failed to subscribe the user:', error);
+      });
+    }
+
+    function urlB64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    }
+
+    function startNotificationInterval() {
+      setInterval(() => {
+        navigator.serviceWorker.ready.then(function (registration) {
+          registration.showNotification('Hello!', {
+            body: 'This is a notification sent every 1 minute.',
+            icon: 'icon.png',
+            badge: 'badge.png'
           });
-      }
+        });
+      }, 60000); // 60000ms = 1 minute
+    }
 
-      function subscribeUserToPush() {
-          return navigator.serviceWorker.ready.then(function(registration) {
-              const subscribeOptions = {
-                  userVisibleOnly: true,
-                  applicationServerKey: urlB64ToUint8Array('BPskWS22ek0iV9nES6i24yV36owupZIosh0W0SJexNy1JELI8HM46xyGuK858XAfMyiwidATXuxQXUADhOWEsWw')
-              };
-
-              return registration.pushManager.subscribe(subscribeOptions);
-          }).then(function(pushSubscription) {
-              console.log('Received PushSubscription:', JSON.stringify(pushSubscription));
-              // Typically, you would send pushSubscription to your server here
-              return pushSubscription;
-          }).catch(function(error) {
-              console.error('Failed to subscribe the user:', error);
-          });
-      }
-
-      function urlB64ToUint8Array(base64String) {
-          const padding = '='.repeat((4 - base64String.length % 4) % 4);
-          const base64 = (base64String + padding)
-              .replace(/\-/g, '+')
-              .replace(/_/g, '/');
-
-          const rawData = window.atob(base64);
-          const outputArray = new Uint8Array(rawData.length);
-
-          for (let i = 0; i < rawData.length; ++i) {
-              outputArray[i] = rawData.charCodeAt(i);
-          }
-          return outputArray;
-      }
-
-      function startNotificationInterval() {
-          setInterval(() => {
-              navigator.serviceWorker.ready.then(function(registration) {
-                  registration.showNotification('Hello!', {
-                      body: 'This is a notification sent every 1 minute.',
-                      icon: 'icon.png',
-                      badge: 'badge.png'
-                  });
-              });
-          }, 10000); // 60000ms = 1 minute
-      }
-
-      function playSound(soundUrl) {
-          const audio = new Audio(soundUrl);
-          audio.play().catch(error => {
-              console.error('Error playing sound:', error);
-          });
-      }
+    function playSound(soundUrl) {
+      const audio = new Audio(soundUrl);
+      audio.play().catch(error => {
+        console.error('Error playing sound:', error);
+      });
+    }
   </script>
 </body>
 
