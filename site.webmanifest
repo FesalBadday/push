@@ -1,7 +1,7 @@
 {
   "name": "مواقيت الصلاة",
   "short_name": "مواقيت الصلاة",
-  "start_url": "/",
+  "start_url": "https://fesal.me/push",
   "description": "مواقيت الصلاة",
   "icons": [
     {
